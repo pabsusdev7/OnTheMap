@@ -10,45 +10,28 @@ import Foundation
 
 class UdacityOTMClient {
     
-    static let apiKey = "144125bc982ce6f6aa64e29bd78d3a3e"
-    
     struct Auth {
-        static var accountId = 0
-        static var requestToken = ""
+        static var accountId = ""
         static var sessionId = ""
     }
     
     enum Endpoints {
         static let base = "https://onthemap-api.udacity.com/v1"
-        static let apiKeyParam = "?api_key=\(UdacityOTMClient.apiKey)"
         
         case getStudentLocations(Int,String,Bool)
-        case getWatchlist
-        case getFavoriteList
-        case getRequestToken
+        case getUserInfo
+        case postStudentLocation
         case login
-        case logout
-        case getSession
-        case webLogin
-        case search(String)
-        case markWatchList
-        case markFavorite
-        case posterImageURL(String)
+        case signUp
         
         var stringValue: String {
             switch self {
             case .getStudentLocations(let limit, let orderBy, let asc): return Endpoints.base + "/StudentLocation?limit=\(limit)&order=\(!asc ? "-" : "")\(orderBy)"
-            case .getWatchlist: return Endpoints.base + "/account/\(Auth.accountId)/watchlist/movies" + Endpoints.apiKeyParam + "&session_id=\(Auth.sessionId)"
-            case .getFavoriteList: return Endpoints.base + "/account/\(Auth.accountId)/favorite/movies" + Endpoints.apiKeyParam + "&session_id=\(Auth.sessionId)"
-            case .getRequestToken: return Endpoints.base + "/authentication/token/new" + Endpoints.apiKeyParam
-            case .login: return Endpoints.base + "/authentication/token/validate_with_login" + Endpoints.apiKeyParam
-            case .getSession: return Endpoints.base + "/authentication/session/new" + Endpoints.apiKeyParam
-            case .webLogin: return "https://www.themoviedb.org/authenticate/" + Auth.requestToken + "?redirect_to=themoviemanager:authenticate"
-            case .logout: return Endpoints.base + "/authentication/session" + Endpoints.apiKeyParam
-            case .search(let query): return Endpoints.base + "/search/movie" + Endpoints.apiKeyParam + "&query=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-            case .markWatchList: return Endpoints.base + "/account/\(Auth.accountId)/watchlist" + Endpoints.apiKeyParam + "&session_id="+Auth.sessionId
-            case .markFavorite: return Endpoints.base + "/account/\(Auth.accountId)/favorite" + Endpoints.apiKeyParam + "&session_id="+Auth.sessionId
-            case .posterImageURL(let posterPath): return "https://image.tmdb.org/t/p/w500" + posterPath
+            case .postStudentLocation: return Endpoints.base + "/StudentLocation"
+            case .login: return Endpoints.base + "/session"
+            case .signUp: return "https://auth.udacity.com/signup"
+            case .getUserInfo: return Endpoints.base + "/users/\(Auth.accountId)"
+                
             }
         }
         
@@ -59,11 +42,15 @@ class UdacityOTMClient {
     
     class func taskForGETRequest<ResponseType: Decodable>(url: URL, responseType: ResponseType.Type, completion: @escaping (ResponseType?, Error?) -> Void) -> URLSessionTask{
         let task = URLSession.shared.dataTask(with: url) { data, response, error in
-            guard let data = data else {
+            guard var data = data else {
                 DispatchQueue.main.async {
                     completion(nil, error)
                 }
                 return
+            }
+            if url == Endpoints.getUserInfo.url {
+                let range = 5..<data.count
+                data = data.subdata(in: range)
             }
             let decoder = JSONDecoder()
             do {
@@ -92,12 +79,17 @@ class UdacityOTMClient {
         
         request.httpBody = try! JSONEncoder().encode(body)
         
+        
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data else {
+            guard var data = data else {
                 DispatchQueue.main.async {
                     completion(nil, error)
                 }
                 return
+            }
+            if url == Endpoints.login.url {
+                let range = 5..<data.count
+                data = data.subdata(in: range)
             }
             let decoder = JSONDecoder()
             do {
@@ -114,17 +106,45 @@ class UdacityOTMClient {
         task.resume()
     }
     
-    class func downloadPosterImage(posterPath: String, completion: @escaping (Data?,Error?)->Void){
-        let task = URLSession.shared.dataTask(with: Endpoints.posterImageURL(posterPath).url){ (data, response, error) in
-            guard let data=data else {
-                completion(nil,error)
-                return
-                
-            }
-            let dowloadedImage = data
-            completion(dowloadedImage,nil)
+    class func taskForDELETERequest<ResponseType: Decodable>(url: URL, responseType: ResponseType.Type, completion: @escaping (ResponseType?, Error?) -> Void){
+        
+        var request = URLRequest(url: url)
+        
+        request.httpMethod = "DELETE"
+        
+        var xsrfCookie: HTTPCookie? = nil
+        let sharedCookieStorage = HTTPCookieStorage.shared
+        for cookie in sharedCookieStorage.cookies! {
+            if cookie.name == "XSRF-TOKEN" { xsrfCookie = cookie }
+        }
+        if let xsrfCookie = xsrfCookie {
+            request.setValue(xsrfCookie.value, forHTTPHeaderField: "X-XSRF-TOKEN")
         }
         
+        
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            guard var data = data else {
+                DispatchQueue.main.async {
+                    completion(nil, error)
+                }
+                return
+            }
+            if url == Endpoints.login.url {
+                let range = 5..<data.count
+                data = data.subdata(in: range)
+            }
+            let decoder = JSONDecoder()
+            do {
+                let responseObject = try decoder.decode(ResponseType.self, from: data)
+                DispatchQueue.main.async {
+                    completion(responseObject, nil)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(nil, error)
+                }
+            }
+        }
         task.resume()
     }
     
@@ -137,6 +157,64 @@ class UdacityOTMClient {
                 completion(response.results,nil)
             }else{
                 completion([], error)
+            }
+        })
+    }
+    
+    class func getUserInfo(completion: @escaping (UserInfoResponse?, Error?) -> Void) {
+        
+        taskForGETRequest(url: Endpoints.getUserInfo.url, responseType: UserInfoResponse.self, completion: {(response, error)
+            in
+            if let response=response{
+                print(response)
+                completion(response,nil)
+            }else{
+                completion(nil, error)
+            }
+        })
+    }
+    
+    class func postLocation(studentLocation: StudentLocation, completion: @escaping (Bool?, Error?) -> Void){
+        
+        let body = studentLocation
+        taskForPOSTRequest(url: Endpoints.postStudentLocation.url, responseType: StudentLocationResponse.self, body: body, completion: {(response, error)
+            in
+            if let response = response {
+                StudentLocationModel.selectedStudentLocation.objectId = response.objectId
+                StudentLocationModel.selectedStudentLocation.createdAt = response.createdAt
+                completion(true, nil)
+            } else{
+                completion(false, error)
+            }
+            
+        })
+        
+    }
+    
+    class func login(username: String, password: String, completion: @escaping (Bool, Error?) -> Void) {
+        
+        let body = LoginRequest(udacity: Credentials(username: username, password: password))
+        taskForPOSTRequest(url: Endpoints.login.url, responseType: LoginResponse.self, body: body, completion: {(response, error)
+            in
+            if let response = response{
+                Auth.sessionId = response.session.id
+                Auth.accountId = response.account.key
+                completion(true ,nil)
+            }else{
+                completion(false, error)
+            }
+        })
+    }
+    
+    class func logout(completion: @escaping (Bool, Error?) -> Void) {
+        
+        taskForDELETERequest(url: Endpoints.login.url, responseType: LogoutResponse.self, completion: {(response, error)
+            in
+            if response != nil{
+                Auth.sessionId = ""
+                completion(true ,nil)
+            }else{
+                completion(false, error)
             }
         })
     }

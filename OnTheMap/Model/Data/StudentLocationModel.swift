@@ -11,5 +11,6 @@ import Foundation
 class StudentLocationModel {
     
     static var studentLocations = [StudentLocation]()
+    static var selectedStudentLocation : StudentLocation!
     
 }

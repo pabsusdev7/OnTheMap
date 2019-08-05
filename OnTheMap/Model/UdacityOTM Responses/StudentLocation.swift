@@ -10,16 +10,16 @@ import Foundation
 
 struct StudentLocation: Codable {
     
-    let objectId: String
-    let uniqueKey: String
-    let firstName: String
-    let lastName: String
-    let mapString: String
-    let mediaURL: String
-    let latitude: Float
-    let longitude: Float
-    let createdAt: String
-    let updatedAt: String
+    var objectId: String?
+    var uniqueKey: String
+    var firstName: String
+    var lastName: String
+    var mapString: String
+    var mediaURL: String
+    var latitude: Float
+    var longitude: Float
+    var createdAt: String
+    var updatedAt: String
     
     enum CodingKeys: String, CodingKey {
         case objectId

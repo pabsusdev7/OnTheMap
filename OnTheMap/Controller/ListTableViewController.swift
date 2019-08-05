@@ -48,6 +48,18 @@ class ListTableViewController: UITableViewController {
         retrieveLocations()
     }
     
+    @IBAction func logOut(_ sender: Any) {
+        UdacityOTMClient.logout(completion: {(response, error)
+            in
+            if response{
+                NotificationUtils.showSuccessMessage(message: "You are now logged out!", action: "OK", vc: self, dismissParent: true)
+                //self.performSegue(withIdentifier: "logoutFromMap", sender: nil)
+            }else{
+                NotificationUtils.showErrorMessage(message: "Error logging you out!", action: "OK", vc: self)
+            }
+        })
+    }
+    
 
 }
 
