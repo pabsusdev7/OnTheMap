@@ -129,6 +129,9 @@
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
+                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="j0L-aE-cZL">
+                                <rect key="frame" x="177" y="461" width="20" height="20"/>
+                            </activityIndicatorView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -138,11 +141,14 @@
                             <constraint firstItem="SsF-sa-UEJ" firstAttribute="trailing" secondItem="Qq0-3r-gx7" secondAttribute="trailing" id="K3v-hk-b3s"/>
                             <constraint firstItem="SsF-sa-UEJ" firstAttribute="top" secondItem="Qq0-3r-gx7" secondAttribute="top" constant="73" id="Wz0-ZY-TfS"/>
                             <constraint firstItem="B3S-k1-K0W" firstAttribute="top" secondItem="sAR-bP-Hnh" secondAttribute="bottom" constant="41" id="aaQ-Zi-mBr"/>
+                            <constraint firstItem="j0L-aE-cZL" firstAttribute="leading" secondItem="Qq0-3r-gx7" secondAttribute="leading" constant="177" id="fAO-0t-txT"/>
                             <constraint firstItem="Qq0-3r-gx7" firstAttribute="trailing" secondItem="B3S-k1-K0W" secondAttribute="trailing" constant="60" id="fR3-gb-SMH"/>
+                            <constraint firstItem="Qq0-3r-gx7" firstAttribute="trailing" secondItem="j0L-aE-cZL" secondAttribute="trailing" constant="178" id="gvQ-9x-dBK"/>
                             <constraint firstItem="L91-IF-kmr" firstAttribute="leading" secondItem="Qq0-3r-gx7" secondAttribute="leading" constant="60" id="laW-iI-aYz"/>
                             <constraint firstItem="B3S-k1-K0W" firstAttribute="leading" secondItem="Qq0-3r-gx7" secondAttribute="leading" constant="60" id="lhS-Hw-0gz"/>
                             <constraint firstItem="SsF-sa-UEJ" firstAttribute="leading" secondItem="Qq0-3r-gx7" secondAttribute="leading" id="nNp-EK-pMf"/>
                             <constraint firstItem="sAR-bP-Hnh" firstAttribute="leading" secondItem="Qq0-3r-gx7" secondAttribute="leading" constant="60" id="pSz-42-g6g"/>
+                            <constraint firstItem="j0L-aE-cZL" firstAttribute="top" secondItem="B3S-k1-K0W" secondAttribute="bottom" constant="55" id="r2x-GM-cUy"/>
                             <constraint firstItem="Qq0-3r-gx7" firstAttribute="trailing" secondItem="sAR-bP-Hnh" secondAttribute="trailing" constant="60" id="uAi-NQ-2eo"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="Qq0-3r-gx7"/>
@@ -155,6 +161,8 @@
                         </barButtonItem>
                     </navigationItem>
                     <connections>
+                        <outlet property="findLocationButton" destination="B3S-k1-K0W" id="2WP-V4-tn0"/>
+                        <outlet property="loadingIndicator" destination="j0L-aE-cZL" id="wUc-1P-haZ"/>
                         <outlet property="location" destination="L91-IF-kmr" id="fwH-ez-YV9"/>
                         <outlet property="url" destination="sAR-bP-Hnh" id="cWk-IW-vQu"/>
                         <segue destination="HgT-md-vZ2" kind="show" identifier="findLocation" id="3Qb-GE-vnV"/>

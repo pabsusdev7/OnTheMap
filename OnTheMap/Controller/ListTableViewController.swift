@@ -23,7 +23,7 @@ class ListTableViewController: UITableViewController {
     func handleStudentLocationsResponse(locations: [StudentLocation], error: Error?){
         
         guard !locations.isEmpty else {
-            print(error?.localizedDescription ?? "")
+            NotificationUtils.showErrorMessage(message: error?.localizedDescription ?? "There was an error pulling locations", action: "OK", vc: self)
             return
         }
         StudentLocationModel.studentLocations = locations
@@ -53,7 +53,6 @@ class ListTableViewController: UITableViewController {
             in
             if response{
                 NotificationUtils.showSuccessMessage(message: "You are now logged out!", action: "OK", vc: self, dismissParent: true)
-                //self.performSegue(withIdentifier: "logoutFromMap", sender: nil)
             }else{
                 NotificationUtils.showErrorMessage(message: "Error logging you out!", action: "OK", vc: self)
             }

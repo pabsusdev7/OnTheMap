@@ -52,6 +52,8 @@ class AddLocationMapViewController: UIViewController, MKMapViewDelegate {
                 in
                 if response! {
                     NotificationUtils.showSuccessMessage(message: "Location added successfuly", action: "OK", vc: self, dismissParent: true)
+                }else{
+                    NotificationUtils.showErrorMessage(message: "There was en error adding the location. Please, try again later.", action: "OK", vc: self, dismissParent: true)
                 }
                 
             })
