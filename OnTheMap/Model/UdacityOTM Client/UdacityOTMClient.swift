@@ -38,41 +38,63 @@ class UdacityOTMClient {
         var url: URL {
             return URL(string: stringValue)!
         }
+        
+        //Using this property for each Endpoint in case it's a Udacity Api and we need to skip the first 5 chars of the response
+        var choky: Bool{
+            switch self {
+            case .getUserInfo:
+                return true
+            case .login:
+                return true
+            default:
+                return false
+            }
+        }
     }
     
-    class func taskForGETRequest<ResponseType: Decodable>(url: URL, responseType: ResponseType.Type, completion: @escaping (ResponseType?, Error?) -> Void) -> URLSessionTask{
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+    class func taskForGETRequest<ResponseType: Decodable>(endpoint: Endpoints, responseType: ResponseType.Type, completion: @escaping (ResponseType?, Error?) -> Void) -> URLSessionTask{
+        let task = URLSession.shared.dataTask(with: endpoint.url) { data, response, error in
             guard var data = data else {
                 DispatchQueue.main.async {
                     completion(nil, error)
                 }
                 return
             }
-            if url == Endpoints.getUserInfo.url {
-                let range = 5..<data.count
-                data = data.subdata(in: range)
+            
+            guard let httpStatusCode = (response as? HTTPURLResponse)?.statusCode else {
+                return
             }
-            let decoder = JSONDecoder()
-            do {
-                let responseObject = try decoder.decode(ResponseType.self, from: data)
-                DispatchQueue.main.async {
-                    completion(responseObject, nil)
+            if httpStatusCode >= 200 && httpStatusCode < 300 {
+                if endpoint.choky {
+                    let range = 5..<data.count
+                    data = data.subdata(in: range)
                 }
-            } catch {
-                DispatchQueue.main.async {
+                let decoder = JSONDecoder()
+                do {
+                    let responseObject = try decoder.decode(ResponseType.self, from: data)
+                    DispatchQueue.main.async {
+                        completion(responseObject, nil)
+                    }
+                } catch {
+                    DispatchQueue.main.async {
                         completion(nil, error)
+                    }
                 }
-                
             }
+            else{
+                completion(nil, error)
+            }
+            
+            
         }
         task.resume()
         
         return task
     }
     
-    class func taskForPOSTRequest<RequestType: Encodable, ResponseType: Decodable>(url: URL, responseType: ResponseType.Type, body: RequestType, completion: @escaping (ResponseType?, Error?) -> Void){
+    class func taskForPOSTRequest<RequestType: Encodable, ResponseType: Decodable>(endpoint: Endpoints, responseType: ResponseType.Type, body: RequestType, completion: @escaping (ResponseType?, Error?) -> Void){
         
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: endpoint.url)
         
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -87,28 +109,36 @@ class UdacityOTMClient {
                 }
                 return
             }
-            if url == Endpoints.login.url {
-                let range = 5..<data.count
-                data = data.subdata(in: range)
+            guard let httpStatusCode = (response as? HTTPURLResponse)?.statusCode else {
+                return
             }
-            let decoder = JSONDecoder()
-            do {
-                let responseObject = try decoder.decode(ResponseType.self, from: data)
-                DispatchQueue.main.async {
-                    completion(responseObject, nil)
+            if httpStatusCode >= 200 && httpStatusCode < 300 {
+                if endpoint.choky {
+                    let range = 5..<data.count
+                    data = data.subdata(in: range)
                 }
-            } catch {
-                DispatchQueue.main.async {
-                    completion(nil, error)
+                let decoder = JSONDecoder()
+                do {
+                    let responseObject = try decoder.decode(ResponseType.self, from: data)
+                    DispatchQueue.main.async {
+                        completion(responseObject, nil)
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        completion(nil, error)
+                    }
                 }
+            }
+            else{
+                completion(nil, error)
             }
         }
         task.resume()
     }
     
-    class func taskForDELETERequest<ResponseType: Decodable>(url: URL, responseType: ResponseType.Type, completion: @escaping (ResponseType?, Error?) -> Void){
+    class func taskForDELETERequest<ResponseType: Decodable>(endpoint: Endpoints, responseType: ResponseType.Type, completion: @escaping (ResponseType?, Error?) -> Void){
         
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: endpoint.url)
         
         request.httpMethod = "DELETE"
         
@@ -129,20 +159,28 @@ class UdacityOTMClient {
                 }
                 return
             }
-            if url == Endpoints.login.url {
-                let range = 5..<data.count
-                data = data.subdata(in: range)
+            guard let httpStatusCode = (response as? HTTPURLResponse)?.statusCode else {
+                return
             }
-            let decoder = JSONDecoder()
-            do {
-                let responseObject = try decoder.decode(ResponseType.self, from: data)
-                DispatchQueue.main.async {
-                    completion(responseObject, nil)
+            if httpStatusCode >= 200 && httpStatusCode < 300 {
+                if endpoint.choky {
+                    let range = 5..<data.count
+                    data = data.subdata(in: range)
                 }
-            } catch {
-                DispatchQueue.main.async {
-                    completion(nil, error)
+                let decoder = JSONDecoder()
+                do {
+                    let responseObject = try decoder.decode(ResponseType.self, from: data)
+                    DispatchQueue.main.async {
+                        completion(responseObject, nil)
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        completion(nil, error)
+                    }
                 }
+            }
+            else{
+                completion(nil, error)
             }
         }
         task.resume()
@@ -150,7 +188,7 @@ class UdacityOTMClient {
     
     class func getStudentLocations(limit: Int, orderBy: String, asc: Bool,completion: @escaping ([StudentLocation], Error?) -> Void) {
         
-        taskForGETRequest(url: Endpoints.getStudentLocations(limit, orderBy, asc).url, responseType: StudentLocationResults.self, completion: {(response, error)
+        taskForGETRequest(endpoint: Endpoints.getStudentLocations(limit, orderBy, asc), responseType: StudentLocationResults.self, completion: {(response, error)
             in
             if let response=response{
                 print(response.results)
@@ -163,7 +201,7 @@ class UdacityOTMClient {
     
     class func getUserInfo(completion: @escaping (UserInfoResponse?, Error?) -> Void) {
         
-        taskForGETRequest(url: Endpoints.getUserInfo.url, responseType: UserInfoResponse.self, completion: {(response, error)
+        taskForGETRequest(endpoint: Endpoints.getUserInfo, responseType: UserInfoResponse.self, completion: {(response, error)
             in
             if let response=response{
                 print(response)
@@ -177,7 +215,7 @@ class UdacityOTMClient {
     class func postLocation(studentLocation: StudentLocation, completion: @escaping (Bool?, Error?) -> Void){
         
         let body = studentLocation
-        taskForPOSTRequest(url: Endpoints.postStudentLocation.url, responseType: StudentLocationResponse.self, body: body, completion: {(response, error)
+        taskForPOSTRequest(endpoint: Endpoints.postStudentLocation, responseType: StudentLocationResponse.self, body: body, completion: {(response, error)
             in
             if let response = response {
                 StudentLocationModel.selectedStudentLocation.objectId = response.objectId
@@ -194,7 +232,7 @@ class UdacityOTMClient {
     class func login(username: String, password: String, completion: @escaping (Bool, Error?) -> Void) {
         
         let body = LoginRequest(udacity: Credentials(username: username, password: password))
-        taskForPOSTRequest(url: Endpoints.login.url, responseType: LoginResponse.self, body: body, completion: {(response, error)
+        taskForPOSTRequest(endpoint: Endpoints.login, responseType: LoginResponse.self, body: body, completion: {(response, error)
             in
             if let response = response{
                 Auth.sessionId = response.session.id
@@ -208,7 +246,7 @@ class UdacityOTMClient {
     
     class func logout(completion: @escaping (Bool, Error?) -> Void) {
         
-        taskForDELETERequest(url: Endpoints.login.url, responseType: LogoutResponse.self, completion: {(response, error)
+        taskForDELETERequest(endpoint: Endpoints.login, responseType: LogoutResponse.self, completion: {(response, error)
             in
             if response != nil{
                 Auth.sessionId = ""
